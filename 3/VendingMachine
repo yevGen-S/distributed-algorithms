@@ -1,0 +1,62 @@
+#define NMAX 10
+#define READY 0
+#define GIVE 1
+#define ASK 0
+#define WAIT 1
+
+mtype = { incoin, recoin, colaGet, beerGet };
+chan mcch = [0] of {mtype};
+chan stch = [0] of { mtype };
+int gotBeerNum;
+int gotColaNum;
+
+active proctype machine() {
+    int colaNum = NMAX, beerNum = NMAX;
+    bit state = READY;
+
+    do
+    :: (state == READY) ->
+        colaNum = NMAX;
+        beerNum = NMAX;
+        printf("MSC: REFILLED\n");
+    :: (state == READY) ->
+        mcch ? incoin;
+        state = GIVE;
+    :: (state == GIVE) && (colaNum == 0) && (beerNum == 0) ->
+        stch ! recoin;
+        state = READY;
+    :: (state == GIVE) && (colaNum > 0) ->
+        stch ! colaGet;
+        state = READY;
+    :: (state == GIVE) && (beerNum > 0) ->
+        stch ! beerGet;
+        state = READY;
+    od;
+}
+
+active proctype student() {
+    mtype message;
+    bit state = ASK;
+    printf("MSC: %d\n", state);
+
+    gotBeerNum = 0;
+    gotColaNum = 0;
+    do
+    :: (state == ASK) ->
+        mcch ! incoin;
+        state = WAIT;
+    :: (state == WAIT) ->
+        stch ? message;
+        if
+        :: (message == recoin) ->
+            printf("MSC: TRY AGAIN\n");
+        :: (message == colaGet) ->
+            gotColaNum++;
+            printf("MSC: GET COLA\n");
+        :: (message == beerGet) ->
+            gotBeerNum++;
+            printf("MSC: GET BEER\n");
+        fi;
+        state = ASK;
+    od;
+}

@@ -1,0 +1,59 @@
+#define LEFT_SIDE 0
+#define RIGHT_SIDE 1
+
+bool allOnLeftSide, allOnRightSide, wolfAndGoat, goatAndCabbage;
+
+active proctype river() {
+    bit wolf = RIGHT_SIDE,
+         goat = RIGHT_SIDE,
+         cabbage = RIGHT_SIDE,             
+         peasant = RIGHT_SIDE;
+    
+    allOnLeftSide = false;
+    allOnRightSide = false;
+    wolfAndGoat = false;
+    goatAndCabbage = false;
+
+    printf("MSC: wolf: %u, goat: %u, cabbage: %u, peasant: %u\n", wolf, goat, cabbage, peasant);
+
+    do
+    :: true ->
+        if
+        :: (wolf == LEFT_SIDE) && (goat == LEFT_SIDE) && (cabbage == LEFT_SIDE) && (peasant == LEFT_SIDE) ->
+            allOnLeftSide = true;
+            allOnRightSide = false;
+            printf("MSC: ALL ON LEFT\n");
+        :: (wolf == RIGHT_SIDE) && (goat == RIGHT_SIDE) && (cabbage == RIGHT_SIDE) && (peasant == RIGHT_SIDE) ->
+            allOnLeftSide = false;
+            allOnRightSide = true;
+            printf("MSC: ALL ON RIGHT\n");
+        :: else ->
+            allOnLeftSide = false;
+            allOnRightSide = false;
+        fi;
+
+        if
+        :: peasant == wolf ->
+            wolf = 1 - wolf;
+        :: peasant == goat ->
+            goat = 1 - goat;
+        :: peasant == cabbage ->
+            cabbage = 1 - cabbage;
+        :: true ->
+            skip;
+        fi;
+
+        peasant = 1 - peasant;
+
+        printf("MSC: wolf: %u, goat: %u, cabbage: %u, peasant: %u\n", wolf, goat, cabbage, peasant);
+
+        if
+        :: (peasant != wolf) && (wolf == goat) ->
+            wolfAndGoat = true;
+        :: (peasant != goat) && (goat == cabbage) ->
+            goatAndCabbage = true;
+        :: else ->
+            skip;
+        fi;
+    od;
+}

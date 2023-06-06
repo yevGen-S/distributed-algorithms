@@ -1,0 +1,72 @@
+#define N 5
+#define I 3
+#define L 2
+
+mtype = {one, two, winner};
+chan p[N] = [L] of {mtype, byte};
+
+byte nr_leaders = 0;
+
+proctype node (chan in, out; byte my_number) {
+    bit Active = 1, know_winner = 0;
+    byte q, max = my_number, left;
+    out ! one(my_number);
+    do
+        :: in ? one(q) -> 
+            if
+            :: Active -> 
+                if
+                :: q != max ->
+                    left = q;
+                    out ! two(q)
+                :: else ->
+                    know_winner = 1;
+                    out ! winner(q);
+                fi
+            :: else ->
+                out ! one(q)
+            fi
+        :: in ? two(q) ->
+            if
+            :: Active ->
+                if
+                :: left > q && left > max ->
+                    max = left;
+                    out ! one(max)
+                :: else ->
+                    Active = 0
+                fi
+            :: else ->
+                out ! two(q)
+            fi
+        :: in ? winner(q) ->
+            if
+            :: q != my_number ->
+                printf("MSC: LOST\n");
+            :: else ->
+                printf("MSC: LEADER\n");
+                nr_leaders++;
+                assert(nr_leaders == 1)
+            fi;
+            if
+            :: know_winner
+            :: else -> out ! winner(q)
+            fi;
+            break
+    od
+}
+
+init {
+    byte proc;
+    atomic {
+        proc = 1;
+        
+        do
+        :: proc <= N ->
+            run node(p[proc - 1], p[proc % N], (N + I - proc) % N + 1);
+            proc++
+        :: proc > N ->
+            break
+        od
+    }
+}
